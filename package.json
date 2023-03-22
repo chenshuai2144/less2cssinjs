@@ -1,0 +1,43 @@
+{
+  "name": "@chenshuai2144/less2cssinjs",
+  "version": "0.0.1",
+  "description": "",
+  "keywords": [],
+  "license": "MIT",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "files": [
+    "dist",
+    "compiled"
+  ],
+  "scripts": {
+    "build": "father build",
+    "build:deps": "father prebundle",
+    "dev": "father dev",
+    "prepublishOnly": "father doctor && npm run build",
+    "test": "ts-node ./src/index.ts"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.21.3",
+    "@babel/parser": "^7.21.3",
+    "@babel/traverse": "^7.21.3",
+    "@babel/types": "^7.21.3",
+    "@types/node": "^18.15.5",
+    "postcss": "^8.4.21",
+    "postcss-less": "^6.0.0",
+    "prettier": "^2.8.6",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "^7.6.4",
+    "@types/babel__traverse": "^7.18.3",
+    "@types/less": "^3.0.3",
+    "@types/postcss-less": "^4.0.2",
+    "@types/prettier": "^2.7.2",
+    "father": "^4.1.7"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "authors": []
+}
