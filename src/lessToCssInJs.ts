@@ -166,7 +166,7 @@ const parseNodeSelector = (selector: string) => {
         .replaceAll('\n', ' ')
         .replaceAll(',', ' ')
         .split(' ')
-        .map((item) => item.replace('.', ''))
+        .map((item) => item.replace('.', '').replace(',', ''))
         .filter(Boolean);
     }
     return selector.replace('.', '');
@@ -244,6 +244,7 @@ const nodeToCssOject = (
         });
       } else {
         nodeToCssOject(node)?.forEach((value, key) => {
+          // & 开头,伪类，或者是 &:hover 之类的
           if (key.startsWith('&')) {
             [selector].flat(1).forEach((selectorItem) => {
               if (key.startsWith('&.')) {
@@ -252,8 +253,19 @@ const nodeToCssOject = (
                 cssMap.get(selectorItem)?.set(key, value);
               }
             });
-          } else {
+            return;
+          }
+
+          // span 或者是 div 之类的
+          if (!key.startsWith('.') || key.startsWith('.ant-')) {
+            [selector].flat(1).forEach((selectorItem) => {
+              cssMap.get(selectorItem)?.set(key, value);
+            });
+          }
+          // .xx 开头
+          if (key.startsWith('.')) {
             cssMap.set(key, value);
+            return;
           }
         });
       }
@@ -318,6 +330,9 @@ export const cssMapToJsCode = (
       const valueString = Array.from(value.entries())
         .map(([key, subValue]) => {
           if (subValue instanceof Map) {
+            if (subValue.size < 1) {
+              return ``;
+            }
             //   [`@media screen and (max-width: ${token.screenXL}px)`]: {}
             if (key.includes('token.')) {
               return `${key}: {${cssMapToJsCode(subValue)}}`;
@@ -362,6 +377,14 @@ export const lessToCssInJs = (lessCode: string) => {
 
     const useStyles = createStyles(() => { return {${code}}});
     export default useStyles;`,
-    { parser: 'babel-ts', plugins: [babelPLugin, babelTsPlugin] }
+    {
+      parser: 'babel-ts',
+      singleQuote: true,
+      trailingComma: 'all',
+      printWidth: 100,
+      proseWrap: 'never',
+      endOfLine: 'lf',
+      plugins: [babelPLugin, babelTsPlugin],
+    }
   );
 };

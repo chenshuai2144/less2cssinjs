@@ -74,6 +74,11 @@ export const stylesImportToCssInJs = (jsCode: string) => {
   const { code } = generate(ast, {}, jsCode);
   return prettier.format(code, {
     parser: 'babel-ts',
+    singleQuote: true,
+    trailingComma: 'all',
+    printWidth: 100,
+    proseWrap: 'never',
+    endOfLine: 'lf',
     plugins: [babelPLugin, babelTsPlugin],
   });
 };
