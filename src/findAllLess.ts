@@ -73,7 +73,7 @@ findAllLessFiles(dirPath).map((item) => {
       .replaceAll(
         '.textOverflow();',
         ` position: relative;
-      max-height: @line * 1.5;
+      max-height: 4.5em;
       margin-right: -1em;
       padding-right: 1em;
       overflow: hidden;

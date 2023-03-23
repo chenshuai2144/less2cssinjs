@@ -27,8 +27,27 @@ const mapAst = (ast: Root, mapFunction: (node: ChildNode) => void) => {
  * 常见的 antd 隐射关系
  */
 const tokenMap = {
+  '@bg': 'colorBgContainer',
+  '@highlight-color': 'colorBgTextActive',
+  '@item-active-bg': 'colorBgTextActive',
+  '@descriptions-bg': 'colorBgContainer',
+  '@item-hover-bg': 'colorBgElevated',
+  '@select-item-selected-bg': 'colorBgElevated',
+  '@box-shadow-base': 'boxShadow',
+  '@avatar-size-sm': 'controlHeightSM',
+  '@avatar-size-lg': 'controlHeightLG',
+  '@avatar-size-base': 'controlHeight',
+  '@disabled-color': 'colorTextDisabled',
+  '@btn-height-lg': 'controlHeight',
+  '@warning-color': 'colorWarning',
+  '@error-color': 'colorError',
+  '@success-color': 'colorSuccess',
+  '@border-radius-base': 'borderRadius',
+  '@menu-bg': 'colorBgContainer',
+  '@border-width-base': 'lineWidth',
+  '@border-style-base': 'borderStyle',
   '@font-size-base': 'fontSize',
-  '@border-color-split': 'colorBorderSplit',
+  '@border-color-split': 'colorSplit',
   '@text-color': 'colorText',
   '@heading-color': 'colorTextHeading',
   '@text-color-secondary': 'colorTextSecondary',
@@ -36,7 +55,9 @@ const tokenMap = {
   '@component-background': 'colorBgContainer',
   '@screen-lg': 'screenLG',
   '@screen-md': 'screenMD',
-  '@screen-xs': 'screenXD',
+  '@screen-xl': 'screenXL',
+  '@screen-sm': 'screenSM',
+  '@screen-xs': 'screenXS',
   '@input-bg': 'colorBgContainer',
   '@screen-md-min': 'screenMDMin',
   '@primary-color': 'colorPrimary',
@@ -110,7 +131,7 @@ const praseNodeParams = (selector: string) => {
     if (tokenMap[value as '@input-bg']) {
       return selector.replaceAll(
         value,
-        `\${token.${tokenMap[value as '@input-bg']}}`
+        `\${token.${tokenMap[value as '@input-bg']}}px`
       );
     }
     return selector.replaceAll('@', 'token.');
@@ -149,10 +170,6 @@ const parseNodeSelector = (selector: string) => {
     }
     return selector.replace('.', '');
   }
-  if (!selector.includes('@media')) {
-    const reg = /^.+\(.+\)$/g;
-    if (reg.test(selector)) return '';
-  }
   return selector.replaceAll('\n', '').replace(/\s+/g, ' ').trim();
 };
 
@@ -182,7 +199,18 @@ const nodeToCssOject = (
           mediaMap.set(key, value);
         });
       });
-      cssMap.set(`@media ${praseNodeParams(node.params)}`, mediaMap);
+
+      mediaMap.forEach((value, key) => {
+        if (!cssMap.has(key)) {
+          cssMap.set(key, new Map<string, string>());
+        }
+        let mediaKey = `@media ${praseNodeParams(node.params)}`;
+
+        if (mediaKey.includes('token.')) {
+          mediaKey = `[\`${mediaKey}\`]`;
+        }
+        cssMap.get(key).set(mediaKey, value);
+      });
     }
   }
   if (node.type === 'rule') {
@@ -289,8 +317,14 @@ export const cssMapToJsCode = (
       const valueString = Array.from(value.entries())
         .map(([key, subValue]) => {
           if (subValue instanceof Map) {
+            //   [`@media screen and (max-width: ${token.screenXL}px)`]: {}
+            if (key.includes('token.')) {
+              return `${key}: {${cssMapToJsCode(subValue)}}`;
+            }
+            // left: {}
             return `"${key}": {${cssMapToJsCode(subValue)}}`;
           }
+          //  width: "144px",
           return `${key}: ${parseJsCodeValue(subValue)}`;
         })
         .join(',');
