@@ -2,7 +2,9 @@
 import traverse from '@babel/traverse';
 import generate from '@babel/generator';
 import * as t from '@babel/types';
-import prettier from 'prettier';
+import prettier from 'prettier/standalone';
+import babelPLugin from 'prettier/parser-babel';
+import babelTsPlugin from 'prettier/parser-typescript';
 
 export const stylesImportToCssInJs = (jsCode: string) => {
   const ast = parse(jsCode, {
@@ -70,5 +72,8 @@ export const stylesImportToCssInJs = (jsCode: string) => {
   });
 
   const { code } = generate(ast, {}, jsCode);
-  return prettier.format(code, { parser: 'babel-ts' });
+  return prettier.format(code, {
+    parser: 'babel-ts',
+    plugins: [babelPLugin, babelTsPlugin],
+  });
 };

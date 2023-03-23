@@ -1,7 +1,8 @@
 import postcssLess from 'postcss-less';
 import postcss, { Root, ChildNode } from 'postcss';
-import prettier from 'prettier';
-
+import prettier from 'prettier/standalone';
+import babelPLugin from 'prettier/parser-babel';
+import babelTsPlugin from 'prettier/parser-typescript';
 /**
  * 将lesscode 转化为 ast
  * @returns ASR
@@ -353,7 +354,7 @@ export const lessToCssInJs = (lessCode: string) => {
       const useStyles = createStyles(({ token }) => { return {${code}}});
       
       export default useStyles;`,
-      { parser: 'babel' }
+      { parser: 'babel', plugins: [babelPLugin] }
     );
   }
   return prettier.format(
@@ -361,6 +362,6 @@ export const lessToCssInJs = (lessCode: string) => {
 
     const useStyles = createStyles(() => { return {${code}}});
     export default useStyles;`,
-    { parser: 'babel-ts' }
+    { parser: 'babel-ts', plugins: [babelPLugin, babelTsPlugin] }
   );
 };
