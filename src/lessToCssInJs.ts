@@ -146,6 +146,11 @@ const praseNodeParams = (selector: string) => {
  * @returns
  */
 const parseNodeSelector = (selector: string) => {
+  // 处理行内注释
+  if (selector.startsWith('/')) {
+    return selector.split('\n').pop()?.replace(/\s+/g, ' ').trim();
+  }
+  // 处理媒体查询
   if (!selector.includes('@media')) {
     const reg = /^.+\(.+\)$/g;
     if (reg.test(selector)) return '';
@@ -166,10 +171,10 @@ const parseNodeSelector = (selector: string) => {
         .replaceAll('\n', ' ')
         .replaceAll(',', ' ')
         .split(' ')
-        .map((item) => item.replace('.', '').replace(',', ''))
+        .map((item) => item.replace(',', ''))
         .filter(Boolean);
     }
-    return selector.replace('.', '');
+    return selector;
   }
   return selector.replaceAll('\n', '').replace(/\s+/g, ' ').trim();
 };
@@ -185,32 +190,34 @@ const parseNodeSelector = (selector: string) => {
 const nodeToCssOject = (
   node: ChildNode
 ): Map<string, string | Map<string, string>> => {
-  const cssMap = new Map();
+  const finCssMap = new Map();
   if (node.type === 'comment') {
     node.remove();
   }
   if (node.type === 'atrule') {
     if (node.name === 'import') {
-      return cssMap;
+      return finCssMap;
     }
     if (node.name === 'media') {
       const mediaMap = new Map();
-      node.nodes?.forEach((node) => {
-        nodeToCssOject(node).forEach((value, key) => {
+      const promiseList = node.nodes?.forEach((node) => {
+        const mewMediaMap = nodeToCssOject(node);
+        mewMediaMap.forEach((value, key) => {
           mediaMap.set(key, value);
         });
+        return;
       });
 
       mediaMap.forEach((value, key) => {
-        if (!cssMap.has(key)) {
-          cssMap.set(key, new Map<string, string>());
+        if (!finCssMap.has(key)) {
+          finCssMap.set(key, new Map<string, string>());
         }
         let mediaKey = `@media ${praseNodeParams(node.params)}`;
 
         if (mediaKey.includes('token.')) {
           mediaKey = `[\`${mediaKey}\`]`;
         }
-        cssMap.get(key).set(mediaKey, value);
+        finCssMap.get(key).set(mediaKey, value);
       });
     }
   }
@@ -221,57 +228,69 @@ const nodeToCssOject = (
     let selector = parseNodeSelector(node.selector);
 
     if (!selector) {
-      return cssMap;
-    }
-    if (Array.isArray(selector)) {
-      selector.map((selectorItem) => {
-        cssMap.set(selectorItem, new Map<string, string>());
-      });
-    } else if (selector !== ':global') {
-      cssMap.set(selector, new Map<string, string>());
+      return finCssMap;
     }
 
     node.nodes?.forEach((node) => {
       if (node.type === 'decl') {
         [selector].flat(1).forEach((selectorItem) => {
           if (selectorItem === ':global') {
-            cssMap.set(toCamelCase(node.prop), praseNodeValue(node.value));
+            finCssMap.set(toCamelCase(node.prop), praseNodeValue(node.value));
           } else {
-            cssMap
+            if (!finCssMap.has(selectorItem)) {
+              finCssMap.set(selectorItem, new Map<string, string>());
+            }
+            finCssMap
               .get(selectorItem)
               ?.set(toCamelCase(node.prop), praseNodeValue(node.value));
           }
         });
-      } else {
-        nodeToCssOject(node)?.forEach((value, key) => {
-          // & 开头,伪类，或者是 &:hover 之类的
-          if (key.startsWith('&')) {
-            [selector].flat(1).forEach((selectorItem) => {
-              if (key.startsWith('&.')) {
-                cssMap.set(key.replaceAll('&.', ''), value);
-              } else {
-                cssMap.get(selectorItem)?.set(key, value);
-              }
-            });
-            return;
-          }
-
-          // span 或者是 div 之类的
-          if (!key.startsWith('.') || key.startsWith('.ant-')) {
-            [selector].flat(1).forEach((selectorItem) => {
-              cssMap.get(selectorItem)?.set(key, value);
-            });
-          }
-          // .xx 开头
-          if (key.startsWith('.')) {
-            cssMap.set(key, value);
-            return;
-          }
-        });
+        return;
       }
+      const nodeMap = nodeToCssOject(node);
+      nodeMap.forEach((value, key) => {
+        // & 开头,伪类，或者是 &:hover 之类的
+        if (key.startsWith('&')) {
+          [selector].flat(1).forEach((selectorItem) => {
+            if (key.startsWith('&.')) {
+              finCssMap.set(key.replaceAll('&.', ''), value);
+              return;
+            }
+            if (!finCssMap.has(selectorItem)) {
+              finCssMap.set(selectorItem, new Map<string, string>());
+            }
+            finCssMap.get(selectorItem)?.set(key, value);
+          });
+          return;
+        }
+        if (key.startsWith(':global')) {
+          if (typeof value === 'string') {
+            finCssMap.set(key.replaceAll(':global', ''), value);
+          }
+          if (value instanceof Map) {
+            value.forEach((value, key) => {
+              finCssMap.set(key, value);
+            });
+          }
+          return;
+        }
+        if (key.startsWith('.') && !key.startsWith('.ant-')) {
+          finCssMap.set(key, value);
+        }
+        // span 或者是 div 之类的
+        if (key.startsWith('.ant-') || !key.startsWith('.')) {
+          [selector].flat(1).forEach((selectorItem) => {
+            if (!finCssMap.has(selectorItem)) {
+              finCssMap.set(selectorItem, new Map<string, string>());
+            }
+            finCssMap.get(selectorItem)?.set(key, value);
+          });
+          return;
+        }
+      });
     });
   }
-  return cssMap;
+  return finCssMap;
 };
 /**
  * 转换 Less 代码为 CSS 对象映射
@@ -284,11 +303,36 @@ export const less2CssObjectMap = (
   const ast = less2AST(code);
   const cssMap = new Map();
   mapAst(ast, (node) => {
+    if (node.type === 'comment') {
+      node.remove();
+      return;
+    }
     if (node?.parent?.type !== 'root') return;
     if (node.type === 'atrule' && node.name === 'import') return;
-    nodeToCssOject(node)?.forEach((value, key) => {
-      cssMap.set(key, value);
-    });
+
+    if (
+      node.type === 'atrule' ||
+      node.type === 'decl' ||
+      node.type === 'rule'
+    ) {
+      const map = nodeToCssOject(node);
+      map?.forEach((value, key) => {
+        if (cssMap.has(key)) {
+          const cssMapValue = cssMap.get(key);
+          if (cssMapValue instanceof Map) {
+            if (value instanceof Map) {
+              value.forEach((subValue, subKey) => {
+                cssMapValue.set(subKey, subValue);
+              });
+            } else {
+              cssMapValue.set(key, value);
+            }
+          }
+          return;
+        }
+        cssMap.set(key, value);
+      });
+    }
   });
   return cssMap;
 };
@@ -325,10 +369,21 @@ export const cssMapToJsCode = (
 ) => {
   let code = '';
   cssMap.forEach((value, mapKey) => {
-    let key = parseJsCodeKey(mapKey);
+    let key = parseJsCodeKey(
+      mapKey.startsWith('.ant-')
+        ? mapKey
+        : mapKey.startsWith('.')
+        ? mapKey.replace('.', '')
+        : mapKey
+    );
     if (value instanceof Map) {
       const valueString = Array.from(value.entries())
-        .map(([key, subValue]) => {
+        .map(([mapSubKey, subValue]) => {
+          const key = mapSubKey.startsWith('.ant')
+            ? mapSubKey
+            : mapSubKey.startsWith('.')
+            ? mapSubKey.replace('.', '')
+            : mapSubKey;
           if (subValue instanceof Map) {
             if (subValue.size < 1) {
               return ``;
@@ -343,11 +398,15 @@ export const cssMapToJsCode = (
           //  width: "144px",
           return `${key}: ${parseJsCodeValue(subValue)}`;
         })
+        .filter(Boolean)
         .join(',');
-      code += `
-      ${key}: {
-        ${valueString}
-      },`;
+
+      if (valueString) {
+        code += `${key}: {
+          ${valueString}
+        },`;
+      }
+
       return;
     }
 

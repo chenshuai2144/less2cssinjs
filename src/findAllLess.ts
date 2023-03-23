@@ -118,4 +118,6 @@ export const transformCssAndTsx = (dir: string) => {
   });
 };
 
-transformCssAndTsx('/Users/shuaichen/Documents/github/ant-design-pro/src');
+transformCssAndTsx(
+  '/Users/shuaichen/Documents/github/ant-design-pro/src/pages/account/center/components/ArticleListContent'
+);
