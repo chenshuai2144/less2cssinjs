@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@babel/generator': ^7.21.3
   '@babel/parser': ^7.21.3
+  '@babel/runtime': ^7.21.0
   '@babel/traverse': ^7.21.3
   '@babel/types': ^7.21.3
   '@types/babel__generator': ^7.6.4
@@ -13,7 +14,6 @@ specifiers:
   '@types/prettier': ^2.7.2
   father: ^4.1.7
   postcss: ^8.4.21
-  postcss-discard-comments: ^5.1.2
   postcss-less: ^6.0.0
   prettier: ^2.8.6
   ts-node: ^10.9.1
@@ -21,11 +21,11 @@ specifiers:
 dependencies:
   '@babel/generator': 7.21.3
   '@babel/parser': 7.21.3
+  '@babel/runtime': 7.21.0
   '@babel/traverse': 7.21.3
   '@babel/types': 7.21.3
   '@types/node': 18.15.5
   postcss: 8.4.21
-  postcss-discard-comments: 5.1.2_postcss@8.4.21
   postcss-less: 6.0.0_postcss@8.4.21
   prettier: 2.8.6
   ts-node: 10.9.1_@types+node@18.15.5
@@ -209,7 +209,6 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.11
-    dev: true
 
   /@babel/template/7.20.7:
     resolution: {integrity: sha512-8SegXApWe6VoNw0r9JHpSteLKTpTiLZ4rMlGIm9JQ18KiCtyQiAMEazujAHrUS5flrcqYZa75ukev3P6QmUwUw==}
@@ -3212,15 +3211,6 @@ packages:
       postcss-selector-parser: 6.0.11
     dev: true
 
-  /postcss-discard-comments/5.1.2_postcss@8.4.21:
-    resolution: {integrity: sha512-+L8208OVbHVF2UQf1iDmRcbdjJkuBF6IS29yBDSiWUIzpYaAhtNl6JYnYm12FnkeCwQqF5LeklOu6rAqgfBZqQ==}
-    engines: {node: ^10 || ^12 || >=14.0}
-    peerDependencies:
-      postcss: ^8.2.15
-    dependencies:
-      postcss: 8.4.21
-    dev: false
-
   /postcss-double-position-gradients/3.1.2_postcss@8.4.21:
     resolution: {integrity: sha512-GX+FuE/uBR6eskOK+4vkXgT6pDkexLokPaz/AbJna9s5Kzp/yl488pKPjhy0obB475ovfT1Wv8ho7U/cHNaRgQ==}
     engines: {node: ^12 || ^14 || >=16}
@@ -3679,7 +3669,6 @@ packages:
 
   /regenerator-runtime/0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
-    dev: true
 
   /regexp.prototype.flags/1.4.3:
     resolution: {integrity: sha512-fjggEOO3slI6Wvgjwflkc4NFRCTZAu5CnNfBd5qOMYhWdn67nJBBu34/TkD++eeFmd8C9r9jfXJ27+nSiRkSUA==}
