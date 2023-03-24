@@ -267,9 +267,19 @@ const nodeToCssOject = (
           if (typeof value === 'string') {
             finCssMap.set(key.replaceAll(':global', ''), value);
           }
+
           if (value instanceof Map) {
             value.forEach((value, key) => {
-              finCssMap.set(key, value);
+              if (!key.startsWith('.ant-')) {
+                finCssMap.set(key, value);
+              } else {
+                [selector].flat(1).forEach((selectorItem) => {
+                  if (!finCssMap.has(selectorItem)) {
+                    finCssMap.set(selectorItem, new Map<string, string>());
+                  }
+                  finCssMap.get(selectorItem)?.set(key, value);
+                });
+              }
             });
           }
           return;
