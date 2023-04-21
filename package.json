@@ -6,6 +6,9 @@
   "license": "MIT",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
+  "bin": {
+    "less2js": "./bin/cli.js"
+  },
   "files": [
     "dist",
     "compiled"
@@ -24,6 +27,7 @@
     "@babel/traverse": "^7.21.3",
     "@babel/types": "^7.21.3",
     "@types/node": "^18.15.5",
+    "commander": "^10.0.1",
     "postcss": "^8.4.21",
     "postcss-less": "^6.0.0",
     "prettier": "^2.8.6",

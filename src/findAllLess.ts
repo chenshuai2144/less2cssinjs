@@ -45,10 +45,22 @@ export const findAllTsxFiles = (dir: string) => {
  * @param dir 文件夹目录，最好是 src
  */
 export const transformCssAndTsx = (dir: string) => {
-  findAllLessFiles(dir).map((item) => {
+  const allLessFiles = findAllLessFiles(dir).filter((item) => {
     if (item.endsWith('global.less')) {
-      return;
+      return false;
     }
+    return true;
+  });
+
+  if (allLessFiles.length < 1) {
+    console.log('未找到less文件');
+    return;
+  }
+
+  console.log('开始转化' + allLessFiles.length + '个文件');
+  allLessFiles.map((item) => {
+    console.log('转化文件：' + item);
+
     const content = fs.readFileSync(item, 'utf-8');
     const ts = lessToCssInJs(
       content
@@ -104,7 +116,7 @@ export const transformCssAndTsx = (dir: string) => {
     );
     // console.log(item.replaceAll(dirPath, '') + ' ' + '😁 编译成功');
     fs.writeFileSync(item.replace('.less', '.style.ts'), ts);
-
+    console.log('转化 tsx');
     findAllTsxFiles(path.parse(item).dir).map((jsFileItem) => {
       const tsxContent = fs.readFileSync(jsFileItem, 'utf-8');
       if (tsxContent.includes(".less'")) {
@@ -117,5 +129,3 @@ export const transformCssAndTsx = (dir: string) => {
     });
   });
 };
-
-transformCssAndTsx('/Users/shuaichen/Documents/github/ant-design-pro/src/');
