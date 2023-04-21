@@ -14,8 +14,8 @@ program
 program.on('--help', function () {
   console.log('');
   console.log('Examples:');
-  console.log('  $ less2cssinjs --help');
-  console.log('  $ less2cssinjs -h');
+  console.log('  $ less2js --help');
+  console.log('  $ less2js -h');
 });
 
 program.parse(process.argv);
