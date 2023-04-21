@@ -5,12 +5,25 @@
 ## Install
 
 ```bash
-$ pnpm install
+npm i -g @chenshuai2144/less2cssinjs
 ```
 
 ```bash
-$ npm run dev
-$ npm run build
+less2js -h
+Usage: less2js [options] <file ...>
+
+Options:
+  -V, --version    output the version number
+  -i, --input <n>  一个路径
+  -h, --help       display help for command
+
+Examples:
+  $ less2js --help
+  $ less2js -h
+```
+
+```bash
+less2js -i “less 所在文件夹”
 ```
 
 ## Options
