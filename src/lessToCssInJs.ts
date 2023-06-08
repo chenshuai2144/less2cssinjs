@@ -411,7 +411,7 @@ const parseJsCodeValue = (key: string): string => {
     return key;
   }
   if (key.includes("'")) {
-    return `"${key}"`;
+    return key;
   }
   return `'${key}'`;
 };

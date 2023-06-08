@@ -7,7 +7,7 @@ const useStyles = createStyles(({ token }) => {
   return {
     "clearfix()": {
       zoom: "1",
-      "&::before, &::after": { display: "table", content: "' '" },
+      "&::before, &::after": { display: "table", content: " " },
       "&::after": {
         clear: "both",
         height: "0",
@@ -59,7 +59,7 @@ const useStyles = createStyles(({ token }) => {
     },
     extraContent: {
       zoom: "1",
-      "&::before, &::after": { display: "table", content: "' '" },
+      "&::before, &::after": { display: "table", content: " " },
       "&::after": {
         clear: "both",
         height: "0",
@@ -105,7 +105,7 @@ const useStyles = createStyles(({ token }) => {
         width: "1px",
         height: "40px",
         backgroundColor: token.colorSplit,
-        content: "''",
+        content: "",
       },
       "&:last-child": {
         paddingRight: "0",
@@ -144,7 +144,7 @@ const useStyles = createStyles(({ token }) => {
           bottom: "0",
           padding: "0 1px",
           background: token.colorBgContainer,
-          content: "'...'",
+          content: "...",
         },
         "&::after": {
           position: "absolute",
@@ -153,7 +153,7 @@ const useStyles = createStyles(({ token }) => {
           height: "1em",
           marginTop: "0.2em",
           background: "white",
-          content: "''",
+          content: "",
         },
         "&:hover": {
           color: token.colorPrimary,
@@ -217,7 +217,7 @@ const useStyles = createStyles(({ token }) => {
         bottom: "0",
         padding: "0 1px",
         background: token.colorBgContainer,
-        content: "'...'",
+        content: "...",
       },
       "&::after": {
         position: "absolute",
@@ -226,7 +226,7 @@ const useStyles = createStyles(({ token }) => {
         height: "1em",
         marginTop: "0.2em",
         background: "white",
-        content: "''",
+        content: "",
       },
       a: {
         display: "inline-block",
@@ -245,7 +245,7 @@ const useStyles = createStyles(({ token }) => {
           bottom: "0",
           padding: "0 1px",
           background: token.colorBgContainer,
-          content: "'...'",
+          content: "...",
         },
         "&::after": {
           position: "absolute",
@@ -254,7 +254,7 @@ const useStyles = createStyles(({ token }) => {
           height: "1em",
           marginTop: "0.2em",
           background: "white",
-          content: "''",
+          content: "",
         },
         "&:hover": {
           color: token.colorPrimary,
