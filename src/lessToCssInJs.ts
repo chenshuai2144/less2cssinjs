@@ -216,11 +216,18 @@ const nodeToCssOject = (
     }
     if (node.name === 'media') {
       const mediaMap = new Map();
-
+      node.nodes?.forEach((node) => {
+        const mewMediaMap = nodeToCssOject(node);
+        mewMediaMap.forEach((value, key) => {
+          mediaMap.set(key, value);
+        });
+        return;
+      });
       mediaMap.forEach((value, key) => {
         if (!finCssMap.has(key)) {
           finCssMap.set(key, new Map<string, string>());
         }
+
         let mediaKey = `@media ${praseNodeParams(node.params)}`;
 
         if (mediaKey.includes('token.')) {
