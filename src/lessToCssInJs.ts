@@ -129,12 +129,13 @@ const praseNodeValue = (value: string): string => {
       if (itemToken.startsWith('#')) {
         return itemToken;
       }
-
       if (itemToken === 'solid') {
         return itemToken;
       }
-
       return `token.${itemToken}`;
+    }
+    if (value.includes('-')) {
+      return `token['${value.replace('@', '')}']`;
     }
     return `token.${toCamelCase(value.replace('@', ''))}`;
   }
@@ -465,7 +466,7 @@ const transformSelector = (selector: string) => {
  * @returns 如果键名包含 `token.` 则返回原始值，否则返回字符串类型的参数值
  */
 const parseJsCodeValue = (key: string): string => {
-  if (key.includes('token.')) {
+  if (key.includes('token.') || key.includes('token[')) {
     return key;
   }
   if (key.includes("'")) {
