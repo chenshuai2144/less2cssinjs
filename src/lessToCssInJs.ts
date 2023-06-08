@@ -28,6 +28,7 @@ const mapAst = (ast: Root, mapFunction: (node: ChildNode) => void) => {
  * 常见的 antd 隐射关系
  */
 const tokenMap = {
+  '@tag-default-bg': '#F9F9F9',
   '@bg': 'colorBgContainer',
   '@highlight-color': 'colorBgTextActive',
   '@item-active-bg': 'colorBgTextActive',
@@ -46,7 +47,7 @@ const tokenMap = {
   '@border-radius-base': 'borderRadius',
   '@menu-bg': 'colorBgContainer',
   '@border-width-base': 'lineWidth',
-  '@border-style-base': 'borderStyle',
+  '@border-style-base': 'solid',
   '@font-size-base': 'fontSize',
   '@border-color-split': 'colorSplit',
   '@text-color': 'colorText',
@@ -91,10 +92,10 @@ function hasMultipleAtSymbols(str: string) {
       count++;
     }
     if (count > 1) {
-      return true;
+      return count;
     }
   }
-  return false;
+  return count;
 }
 /**
  * 解析节点的值, 如果是变量, 则返回 token.变量名
@@ -102,23 +103,62 @@ function hasMultipleAtSymbols(str: string) {
  * @returns  string
  */
 const praseNodeValue = (value: string): string => {
-  if (hasMultipleAtSymbols(value)) {
+  if (hasMultipleAtSymbols(value) > 1) {
     return `\`${value
       .split(' ')
       .map((item) => {
         if (item.startsWith('@')) {
-          return `\${${praseNodeValue(item)}}`;
+          const parseNodeString = praseNodeValue(item);
+          if (parseNodeString.endsWith('Width')) {
+            return `\${${parseNodeString}}px`;
+          }
+          if (parseNodeString.startsWith('token.')) {
+            return `\${${parseNodeString}}`;
+          }
+
+          return parseNodeString;
         }
         return item;
       })
       .join(' ')}\``;
   }
+
   if (value.startsWith('@')) {
-    if (tokenMap[value as '@input-bg']) {
-      return `token.${tokenMap[value as '@input-bg']}`;
+    const itemToken = tokenMap[value as '@input-bg'];
+    if (itemToken) {
+      if (itemToken.startsWith('#')) {
+        return itemToken;
+      }
+
+      if (itemToken === 'solid') {
+        return itemToken;
+      }
+
+      return `token.${itemToken}`;
     }
     return `token.${toCamelCase(value.replace('@', ''))}`;
   }
+
+  if (hasMultipleAtSymbols(value) === 1) {
+    return `\`${value
+      .split(' ')
+      .map((item) => {
+        if (item.startsWith('@')) {
+          const parseNodeString = praseNodeValue(item);
+          if (parseNodeString.endsWith('Width')) {
+            return `\${${parseNodeString}}px`;
+          }
+          if (parseNodeString.startsWith('token.')) {
+            return `\${${parseNodeString}}`;
+          }
+
+          return parseNodeString;
+        }
+        return item;
+      })
+      .join(' ')}\``;
+  }
+
   return value;
 };
 /**
@@ -204,7 +244,8 @@ const parseNodeSelector = (selector: string) => {
  * @returns CSS 对象 Map
  */
 const nodeToCssOject = (
-  node: ChildNode
+  node: ChildNode,
+  globalCssMap: Map<string, string | Map<string, string>>
 ): Map<string, string | Map<string, string>> => {
   const finCssMap = new Map();
   if (node.type === 'comment') {
@@ -217,7 +258,7 @@ const nodeToCssOject = (
     if (node.name === 'media') {
       const mediaMap = new Map();
       node.nodes?.forEach((node) => {
-        const mewMediaMap = nodeToCssOject(node);
+        const mewMediaMap = nodeToCssOject(node, globalCssMap);
         mewMediaMap.forEach((value, key) => {
           mediaMap.set(key, value);
         });
@@ -264,19 +305,19 @@ const nodeToCssOject = (
         return;
       }
 
-      const nodeMap = nodeToCssOject(node);
+      const nodeMap = nodeToCssOject(node, globalCssMap);
       nodeMap.forEach((value, key) => {
         // & 开头,伪类，或者是 &:hover 之类的
         if (key.startsWith('&')) {
           [selector].flat(1).forEach((selectorItem) => {
-            if (key.startsWith('&.')) {
-              finCssMap.set(key.replaceAll('&.', ''), value);
-              return;
+            if (!key.startsWith('&.')) {
+              if (!finCssMap.has(selectorItem)) {
+                finCssMap.set(selectorItem, new Map<string, string>());
+              }
+              finCssMap.get(selectorItem)?.set(key, value);
+            } else {
+              globalCssMap.set(key.replaceAll('&.', ''), value);
             }
-            if (!finCssMap.has(selectorItem)) {
-              finCssMap.set(selectorItem, new Map<string, string>());
-            }
-            finCssMap.get(selectorItem)?.set(key, value);
           });
           return;
         }
@@ -355,8 +396,25 @@ export const less2CssObjectMap = (
       node.type === 'decl' ||
       node.type === 'rule'
     ) {
-      const map = nodeToCssOject(node);
+      const globalCssMap = new Map();
+      const map = nodeToCssOject(node, globalCssMap);
       map?.forEach((value, key) => {
+        if (cssMap.has(key)) {
+          const cssMapValue = cssMap.get(key);
+          if (cssMapValue instanceof Map) {
+            if (value instanceof Map) {
+              value.forEach((subValue, subKey) => {
+                cssMapValue.set(subKey, subValue);
+              });
+            } else {
+              cssMapValue.set(key, value);
+            }
+          }
+          return;
+        }
+        cssMap.set(key, value);
+      });
+      globalCssMap?.forEach((value, key) => {
         if (cssMap.has(key)) {
           const cssMapValue = cssMap.get(key);
           if (cssMapValue instanceof Map) {
@@ -411,7 +469,7 @@ const parseJsCodeValue = (key: string): string => {
     return key;
   }
   if (key.includes("'")) {
-    return key;
+    return `"${key}"`;
   }
   return `'${key}'`;
 };
@@ -447,7 +505,7 @@ export const cssMapToJsCode = (
         .filter(Boolean)
         .join(',');
 
-      if (valueString) {
+      if (valueString && !key.endsWith('()"')) {
         code += `${key}: {
           ${valueString}
         },`;
@@ -491,30 +549,11 @@ export const lessToCssInJs = (lessCode: string) => {
       )
       .replaceAll(
         '.textOverflow();',
-        ` position: relative;
-  max-height: 4.5em;
-  margin-right: -1em;
-  padding-right: 1em;
-  overflow: hidden;
-  line-height: 1.5em;
-  text-align: justify;
-  &::before {
-    position: absolute;
-    right: 14px;
-    bottom: 0;
-    padding: 0 1px;
-    background: @bg;
-    content: '...';
-  }
-  &::after {
-    position: absolute;
-    right: 14px;
-    width: 1em;
-    height: 1em;
-    margin-top: 0.2em;
-    background: white;
-    content: '';
-  }`
+        `overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        word-break: break-all;
+ `
       )
   );
   const code = cssMapToJsCode(cssMap);
