@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`lessToCssInJs lessToCssInJs for content 1`] = `
+"import { createStyles } from 'antd-style';
+
+const useStyles = createStyles(() => {
+  return {
+    'dynamic-button': {
+      height: '100%',
+      position: 'absolute',
+      right: '1px',
+      top: '0',
+      button: { border: 'none', padding: '0', boxShadow: 'none', backgroundColor: 'transparent' },
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        width: '1px',
+        height: '19px',
+        left: '0',
+        top: '8px',
+        borderLeft: '1px dotted rgb(0 0 0 / 12%)',
+      },
+    },
+    'dynamic-menu': {
+      width: '187px',
+      em: { color: '#ccc', fontSize: '11px' },
+    },
+  };
+});
+export default useStyles;
+"
+`;
+
+exports[`lessToCssInJs lessToCssInJs for global 1`] = `
+"import { createStyles } from 'antd-style';
+
+const useStyles = createStyles(() => {
+  return {
+    menu: {
+      '.anticon': { marginRight: '8px' },
+      '.ant-dropdown-menu-item': { minWidth: '160px' },
+    },
+  };
+});
+export default useStyles;
+"
+`;

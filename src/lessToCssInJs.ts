@@ -140,6 +140,11 @@ const praseNodeParams = (selector: string) => {
   return selector;
 };
 
+const getGlobalSelector = (selector: string) => {
+  const regex = /\.([\w-]+)/;
+  return selector.match(regex)?.[0] || selector;
+};
+
 /**
  * 转化节点的选择器，去除括号
  * @param selector
@@ -150,11 +155,21 @@ const parseNodeSelector = (selector: string) => {
   if (selector.startsWith('/')) {
     return selector.split('\n').pop()?.replace(/\s+/g, ' ').trim();
   }
+
+  if (selector.startsWith(':global(')) {
+    return selector;
+  }
+
+  if (selector.startsWith(':global')) {
+    return selector;
+  }
+
   // 处理媒体查询
   if (!selector.includes('@media')) {
     const reg = /^.+\(.+\)$/g;
     if (reg.test(selector)) return '';
   }
+
   const pattern = /\((.*?)\)/;
   const matches = selector.match(pattern);
   if (matches) return matches[1];
@@ -162,6 +177,7 @@ const parseNodeSelector = (selector: string) => {
   if (selector.startsWith('.ant')) {
     return selector.replaceAll('\n', ' ').replace(/\s+/g, ' ');
   }
+
   if (selector.startsWith('.')) {
     if (selector.split('.').length > 1) {
       if (selector.includes('>')) {
@@ -200,13 +216,6 @@ const nodeToCssOject = (
     }
     if (node.name === 'media') {
       const mediaMap = new Map();
-      const promiseList = node.nodes?.forEach((node) => {
-        const mewMediaMap = nodeToCssOject(node);
-        mewMediaMap.forEach((value, key) => {
-          mediaMap.set(key, value);
-        });
-        return;
-      });
 
       mediaMap.forEach((value, key) => {
         if (!finCssMap.has(key)) {
@@ -221,12 +230,12 @@ const nodeToCssOject = (
       });
     }
   }
+
   if (node.type === 'rule') {
     /**
      * @type {string} - 选择器名
      */
     let selector = parseNodeSelector(node.selector);
-
     if (!selector) {
       return finCssMap;
     }
@@ -247,6 +256,7 @@ const nodeToCssOject = (
         });
         return;
       }
+
       const nodeMap = nodeToCssOject(node);
       nodeMap.forEach((value, key) => {
         // & 开头,伪类，或者是 &:hover 之类的
@@ -263,7 +273,8 @@ const nodeToCssOject = (
           });
           return;
         }
-        if (key.startsWith(':global')) {
+
+        if (key.startsWith(':global') && !key.includes(':global(')) {
           if (typeof value === 'string') {
             finCssMap.set(key.replaceAll(':global', ''), value);
           }
@@ -284,12 +295,24 @@ const nodeToCssOject = (
           }
           return;
         }
-        if (key.startsWith('.') && !key.startsWith('.ant-')) {
+        if (
+          key.startsWith('.') &&
+          !key.startsWith('.ant-') &&
+          !key.startsWith(':global(')
+        ) {
           finCssMap.set(key, value);
         }
         // span 或者是 div 之类的
-        if (key.startsWith('.ant-') || !key.startsWith('.')) {
+        if (
+          key.startsWith('.ant-') ||
+          key.startsWith(':global(') ||
+          !key.startsWith('.')
+        ) {
           [selector].flat(1).forEach((selectorItem) => {
+            if (selectorItem?.startsWith(':global(')) {
+              selectorItem = getGlobalSelector(selectorItem);
+            }
+
             if (!finCssMap.has(selectorItem)) {
               finCssMap.set(selectorItem, new Map<string, string>());
             }
@@ -358,6 +381,19 @@ const parseJsCodeKey = (key: string): string => {
   return `"${key}"`;
 };
 
+const transformSelector = (selector: string) => {
+  if (selector.startsWith('.ant-')) {
+    return selector;
+  }
+  if (selector.startsWith(':global(')) {
+    return selector.replace(':global(', '').replace(')', '');
+  }
+  if (selector.startsWith('.')) {
+    return selector.replace('.', '');
+  }
+  return selector;
+};
+
 /**
  * @title 解析 JS 代码
  * @param key - 键名
@@ -367,7 +403,10 @@ const parseJsCodeValue = (key: string): string => {
   if (key.includes('token.')) {
     return key;
   }
-  return `"${key}"`;
+  if (key.includes("'")) {
+    return `"${key}"`;
+  }
+  return `'${key}'`;
 };
 /**
  * @title 将 Map 转为 js 代码
@@ -379,34 +418,24 @@ export const cssMapToJsCode = (
 ) => {
   let code = '';
   cssMap.forEach((value, mapKey) => {
-    let key = parseJsCodeKey(
-      mapKey.startsWith('.ant-')
-        ? mapKey
-        : mapKey.startsWith('.')
-        ? mapKey.replace('.', '')
-        : mapKey
-    );
+    let key = parseJsCodeKey(transformSelector(mapKey));
     if (value instanceof Map) {
       const valueString = Array.from(value.entries())
         .map(([mapSubKey, subValue]) => {
-          const key = mapSubKey.startsWith('.ant')
-            ? mapSubKey
-            : mapSubKey.startsWith('.')
-            ? mapSubKey.replace('.', '')
-            : mapSubKey;
+          const subKey = transformSelector(mapSubKey);
           if (subValue instanceof Map) {
             if (subValue.size < 1) {
               return ``;
             }
             //   [`@media screen and (max-width: ${token.screenXL}px)`]: {}
-            if (key.includes('token.')) {
-              return `${key}: {${cssMapToJsCode(subValue)}}`;
+            if (subKey.includes('token.')) {
+              return `${subKey}: {${cssMapToJsCode(subValue)}}`;
             }
             // left: {}
-            return `"${key}": {${cssMapToJsCode(subValue)}}`;
+            return `"${subKey}": {${cssMapToJsCode(subValue)}}`;
           }
           //  width: "144px",
-          return `${key}: ${parseJsCodeValue(subValue)}`;
+          return `${subKey}: ${parseJsCodeValue(subValue)}`;
         })
         .filter(Boolean)
         .join(',');
@@ -429,7 +458,58 @@ export const cssMapToJsCode = (
 };
 
 export const lessToCssInJs = (lessCode: string) => {
-  const cssMap = less2CssObjectMap(lessCode);
+  const cssMap = less2CssObjectMap(
+    lessCode
+      .replaceAll(
+        '.textOverflowMulti();',
+        ` overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  word-break: break-all;`
+      )
+      .replaceAll(
+        '.clearfix();',
+        ` zoom: 1;
+      &::before,
+      &::after {
+        display: table;
+        content: ' ';
+      }
+      &::after {
+        clear: both;
+        height: 0;
+        font-size: 0;
+        visibility: hidden;
+      }`
+      )
+      .replaceAll(
+        '.textOverflow();',
+        ` position: relative;
+  max-height: 4.5em;
+  margin-right: -1em;
+  padding-right: 1em;
+  overflow: hidden;
+  line-height: 1.5em;
+  text-align: justify;
+  &::before {
+    position: absolute;
+    right: 14px;
+    bottom: 0;
+    padding: 0 1px;
+    background: @bg;
+    content: '...';
+  }
+  &::after {
+    position: absolute;
+    right: 14px;
+    width: 1em;
+    height: 1em;
+    margin-top: 0.2em;
+    background: white;
+    content: '';
+  }`
+      )
+  );
   const code = cssMapToJsCode(cssMap);
   if (code.includes('token.')) {
     return prettier.format(
