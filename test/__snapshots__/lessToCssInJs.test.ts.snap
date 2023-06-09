@@ -5,16 +5,6 @@ exports[`lessToCssInJs lessToCssInJs for  @media 1`] = `
 
 const useStyles = createStyles(({ token }) => {
   return {
-    "clearfix()": {
-      zoom: "1",
-      "&::before, &::after": { display: "table", content: " " },
-      "&::after": {
-        clear: "both",
-        height: "0",
-        fontSize: "0",
-        visibility: "hidden",
-      },
-    },
     activitiesList: {
       padding: "0 24px 8px 24px",
     },
@@ -59,7 +49,7 @@ const useStyles = createStyles(({ token }) => {
     },
     extraContent: {
       zoom: "1",
-      "&::before, &::after": { display: "table", content: " " },
+      "&::before, &::after": { display: "table", content: "' '" },
       "&::after": {
         clear: "both",
         height: "0",
@@ -105,7 +95,7 @@ const useStyles = createStyles(({ token }) => {
         width: "1px",
         height: "40px",
         backgroundColor: token.colorSplit,
-        content: "",
+        content: "''",
       },
       "&:last-child": {
         paddingRight: "0",
@@ -131,30 +121,10 @@ const useStyles = createStyles(({ token }) => {
         margin: "12px 0",
         color: token.colorText,
         transition: "all 0.3s",
-        position: "relative",
-        maxHeight: "4.5em",
-        marginRight: "-1em",
-        paddingRight: "1em",
         overflow: "hidden",
-        lineHeight: "1.5em",
-        textAlign: "justify",
-        "&::before": {
-          position: "absolute",
-          right: "14px",
-          bottom: "0",
-          padding: "0 1px",
-          background: token.colorBgContainer,
-          content: "...",
-        },
-        "&::after": {
-          position: "absolute",
-          right: "14px",
-          width: "1em",
-          height: "1em",
-          marginTop: "0.2em",
-          background: "white",
-          content: "",
-        },
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+        wordBreak: "break-all",
         "&:hover": {
           color: token.colorPrimary,
         },
@@ -205,57 +175,18 @@ const useStyles = createStyles(({ token }) => {
       marginTop: "8px",
       overflow: "hidden",
       fontSize: "12px",
-      lineHeight: "1.5em",
-      position: "relative",
-      maxHeight: "4.5em",
-      marginRight: "-1em",
-      paddingRight: "1em",
-      textAlign: "justify",
-      "&::before": {
-        position: "absolute",
-        right: "14px",
-        bottom: "0",
-        padding: "0 1px",
-        background: token.colorBgContainer,
-        content: "...",
-      },
-      "&::after": {
-        position: "absolute",
-        right: "14px",
-        width: "1em",
-        height: "1em",
-        marginTop: "0.2em",
-        background: "white",
-        content: "",
-      },
+      lineHeight: "20px",
+      whiteSpace: "nowrap",
+      textOverflow: "ellipsis",
+      wordBreak: "break-all",
       a: {
         display: "inline-block",
         flex: "1 1 0",
         color: token.colorTextSecondary,
-        position: "relative",
-        maxHeight: "4.5em",
-        marginRight: "-1em",
-        paddingRight: "1em",
         overflow: "hidden",
-        lineHeight: "1.5em",
-        textAlign: "justify",
-        "&::before": {
-          position: "absolute",
-          right: "14px",
-          bottom: "0",
-          padding: "0 1px",
-          background: token.colorBgContainer,
-          content: "...",
-        },
-        "&::after": {
-          position: "absolute",
-          right: "14px",
-          width: "1em",
-          height: "1em",
-          marginTop: "0.2em",
-          background: "white",
-          content: "",
-        },
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+        wordBreak: "break-all",
         "&:hover": {
           color: token.colorPrimary,
         },
@@ -319,6 +250,29 @@ const useStyles = createStyles(() => {
     menu: {
       '.anticon': { marginRight: '8px' },
       '.ant-dropdown-menu-item': { minWidth: '160px' },
+    },
+  };
+});
+export default useStyles;
+"
+`;
+
+exports[`lessToCssInJs lessToCssInJs support linear-gradient 1`] = `
+"import { createStyles } from 'antd-style';
+
+const useStyles = createStyles(() => {
+  return {
+    'drag-handle': {
+      verticalAlign: 'bottom',
+      cursor: 'move',
+      display: 'inline-flex',
+      alignItems: 'stretch',
+      justifyContent: 'center',
+      height: '22px',
+    },
+    'sortable-container': {
+      transition: 'background-color 200ms ease-out',
+      transitionDelay: '300ms',
     },
   };
 });

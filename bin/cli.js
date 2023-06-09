@@ -7,8 +7,8 @@ const { transformCssAndTsx } = require('../dist/cjs/findAllLess');
 program
   .version(package.version)
   .usage('[options] <file ...>')
-  .option('-i, --input <n>', '一个路径', (inputPath) => {
-    transformCssAndTsx(inputPath);
+  .option('-i, --input <n>', '一个路径', async (inputPath) => {
+    await transformCssAndTsx(inputPath);
   });
 
 program.on('--help', function () {

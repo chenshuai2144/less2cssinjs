@@ -44,7 +44,7 @@ export const findAllTsxFiles = (dir: string) => {
  * 转换 less 和 tsx文件
  * @param dir 文件夹目录，最好是 src
  */
-export const transformCssAndTsx = (dir: string) => {
+export const transformCssAndTsx = async (dir: string) => {
   const allLessFiles = findAllLessFiles(dir).filter((item) => {
     if (item.endsWith('global.less')) {
       return false;
@@ -58,11 +58,10 @@ export const transformCssAndTsx = (dir: string) => {
   }
 
   console.log('开始转化' + allLessFiles.length + '个文件');
-  allLessFiles.map((item) => {
+  for await (const item of allLessFiles) {
     console.log('转化文件：' + item);
-
     const content = fs.readFileSync(item, 'utf-8');
-    const ts = lessToCssInJs(content);
+    const ts = await lessToCssInJs(content);
     // console.log(item.replaceAll(dirPath, '') + ' ' + '😁 编译成功');
     fs.writeFileSync(item.replace('.less', '.style.ts'), ts);
     console.log('转化 tsx');
@@ -76,5 +75,5 @@ export const transformCssAndTsx = (dir: string) => {
         }
       }
     });
-  });
+  }
 };

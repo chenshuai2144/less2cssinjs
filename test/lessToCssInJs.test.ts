@@ -1,9 +1,9 @@
 ﻿import { lessToCssInJs } from '../src/lessToCssInJs';
 
 describe('lessToCssInJs', () => {
-  it('lessToCssInJs for content', () => {
+  it('lessToCssInJs for content', async () => {
     expect(
-      lessToCssInJs(`.dynamic-button {
+      await lessToCssInJs(`.dynamic-button {
     height: 100%;
     position: absolute !important;
     right: 1px;
@@ -38,9 +38,9 @@ describe('lessToCssInJs', () => {
     ).toMatchSnapshot();
   });
 
-  it('lessToCssInJs for global', () => {
+  it('lessToCssInJs for global', async () => {
     expect(
-      lessToCssInJs(`@import (reference) '~antd/es/style/themes/index';
+      await lessToCssInJs(`@import (reference) '~antd/es/style/themes/index';
 
       @pro-header-hover-bg: rgba(0, 0, 0, 0.025);
       
@@ -56,9 +56,9 @@ describe('lessToCssInJs', () => {
     ).toMatchSnapshot();
   });
 
-  it('lessToCssInJs for  @media', () => {
+  it('lessToCssInJs for  @media', async () => {
     expect(
-      lessToCssInJs(`@import '~antd/es/style/themes/default.less';
+      await lessToCssInJs(`@import '~antd/es/style/themes/default.less';
 
     .textOverflow() {
       overflow: hidden;
@@ -306,6 +306,40 @@ describe('lessToCssInJs', () => {
         .projectGrid {
           width: 100%;
         }
+      }
+    }
+    `)
+    ).toMatchSnapshot();
+  });
+
+  it('lessToCssInJs support linear-gradient', async () => {
+    expect(
+      await lessToCssInJs(`.drag-handle {
+      vertical-align: bottom;
+      cursor: move;
+      display: inline-flex;
+      align-items: stretch;
+      justify-content: center;
+      height: 22px;
+     //   width: 22px;
+      &::before {
+        content: '';
+        display: block;
+        width: 6px;
+        background:
+          linear-gradient(90deg, transparent 0, white 1px, white 2px) center,
+          linear-gradient(transparent 0, white 1px, white 2px) center;
+        background-size: 2px 2px;
+      }
+    }
+    
+    .sortable-container {
+      transition: background-color 200ms ease-out;
+      transition-delay: 300ms; // short pause before returning to original bgcolor
+    
+      &.sortable-container-dragging {
+        transition-delay: 0s;
+        background-color: #fff;
       }
     }
     `)

@@ -1,17 +1,22 @@
 import postcssLess from 'postcss-less';
 import postcss, { Root, ChildNode } from 'postcss';
+//@ts-ignore
+import stripInlineComments from 'postcss-strip-inline-comments';
 import prettier from 'prettier/standalone';
 import babelPLugin from 'prettier/parser-babel';
 import babelTsPlugin from 'prettier/parser-typescript';
+console.log(stripInlineComments);
 /**
  * 将lesscode 转化为 ast
  * @returns ASR
  */
 const less2AST = (code: string) =>
-  postcss.parse(code, {
-    //@ts-ignore
-    parser: postcssLess.parse,
-  });
+  postcss([stripInlineComments])
+    .process(code, {
+      //@ts-ignore
+      parser: postcssLess.parse,
+    })
+    .then((result) => result.root as Root);
 
 /**
  * 遍历AST的方法
@@ -379,10 +384,10 @@ const nodeToCssOject = (
  * @param code - Less 代码
  * @returns CSS 对象映射
  **/
-export const less2CssObjectMap = (
+export const less2CssObjectMap = async (
   code: string
-): Map<string, Map<string, Map<string, any>>> => {
-  const ast = less2AST(code);
+): Promise<Map<string, Map<string, Map<string, any>>>> => {
+  const ast = await less2AST(code);
   const cssMap = new Map();
   mapAst(ast, (node) => {
     if (node.type === 'comment') {
@@ -467,12 +472,15 @@ const transformSelector = (selector: string) => {
  */
 const parseJsCodeValue = (key: string): string => {
   if (key.includes('token.') || key.includes('token[')) {
-    return key;
+    return key.trim();
   }
   if (key.includes("'")) {
-    return `"${key}"`;
+    return `"${key.trim()}"`;
   }
-  return `'${key}'`;
+  if (key.includes('\n')) {
+    return `\`${key.trim()}\``;
+  }
+  return `'${key.trim()}'`;
 };
 /**
  * @title 将 Map 转为 js 代码
@@ -523,8 +531,8 @@ export const cssMapToJsCode = (
   return code;
 };
 
-export const lessToCssInJs = (lessCode: string) => {
-  const cssMap = less2CssObjectMap(
+export const lessToCssInJs = async (lessCode: string) => {
+  const cssMap = await less2CssObjectMap(
     lessCode
       .replaceAll(
         '.textOverflowMulti();',
@@ -557,7 +565,7 @@ export const lessToCssInJs = (lessCode: string) => {
  `
       )
   );
-  const code = cssMapToJsCode(cssMap);
+  const code = await cssMapToJsCode(cssMap);
   if (code.includes('token.')) {
     return prettier.format(
       `import { createStyles } from 'antd-style';
